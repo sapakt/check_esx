@@ -41,9 +41,8 @@ def main():
     password=None
     with open(opts.auth,"r") as authfile:
         for line in authfile:
-            line=line.strip()
-            line_parsed=line.split('=')
-            if(line_parsed[0] == 'user'):
+            line_parsed=[x.strip() for x in line.split('=')]
+            if(line_parsed[0] == 'username'):
                 login=line_parsed[1]
             if(line_parsed[0] == 'password'):
                 password=line_parsed[1]
