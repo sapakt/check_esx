@@ -8,15 +8,15 @@ import sys
 
 def validate_options():
     parser = argparse.ArgumentParser(description='Input parameters',formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-c', '--critical',dest='crit',default='90',
+    parser.add_argument('-c', '--critical',dest='crit',default=90,type=float,
                          help='Set the critical threshold')
-    parser.add_argument('-w', '--warning',dest='warn',default='80',
+    parser.add_argument('-w', '--warning',dest='warn',default=80,type=float,
                          help='Set the warning threshold')
     parser.add_argument('-l', '--command',dest='cmd',
                          help='Specify command type (cpu, mem, service)')
     parser.add_argument('-s', '--subcommand',dest='sub',
                          help='Specify subcommand')
-    parser.add_argument('-t', '--timeout',dest='timeout',default=30,
+    parser.add_argument('-t', '--timeout',dest='timeout',default=30,type=int,
                          help='Seconds before plugin times out')
     parser.add_argument('-H', '--host',dest='host',
                          help='ESXi hostname.')
@@ -60,10 +60,10 @@ def main():
             usage=(stats.overallCpuUsage / (hardware.numCpuCores * hardware.cpuMhz) * 100)
         if (opts.cmd == 'mem'):
             usage=(stats.overallMemoryUsage / (hardware.memorySize / 1024 / 1024) * 100)
-        if (usage > float(opts.crit)):
+        if (usage > opts.crit):
             print ("CRITICAL - %s usage=%f" % (opts.cmd,usage))
             sys.exit(2)
-        elif (usage > float(opts.warn)):
+        elif (usage > opts.warn):
             print ("WARNING - %s usage=%f" % (opts.cmd,usage))
             sys.exit(1)
         else:
