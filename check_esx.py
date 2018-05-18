@@ -2,10 +2,12 @@
 
 from pyVmomi import vim
 from pyVim.connect import SmartConnectNoSSL, Disconnect
+import signal
 import argparse
 import atexit
 import sys
 
+#Parse arguments
 def validate_options():
     parser = argparse.ArgumentParser(description='Input parameters',formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-c', '--critical',dest='crit',default=90,type=float,
@@ -35,6 +37,17 @@ password=<password>''')
         parser.error('Missing or invalid subcommand.')
     return args
 
+#Retrieve data from ESXi
+def retrieve_content(host,port,login,password):
+    si=SmartConnectNoSSL(host=host, port=port, user=login, pwd=password)
+    atexit.register(Disconnect, si)
+    return si.RetrieveContent()
+
+#Handle timeout
+def handler(signum, frame):
+    print ("Check timed out.")
+    sys.exit(0)
+
 def main():
     opts=validate_options()
     login=None
@@ -49,10 +62,14 @@ def main():
     if (login == None) or (password == None):
         print ('Authfile missing username or password.')
         sys.exit(2)
-    si=SmartConnectNoSSL(host=opts.host, port=443, user=login, pwd=password,connectionPoolTimeout=opts.timeout)
-    atexit.register(Disconnect, si)
-    content=si.RetrieveContent()
-    hostid=si.content.rootFolder.childEntity[0].hostFolder.childEntity[0].host[0]
+
+    # call handler function after timeout
+    signal.signal(signal.SIGALRM, handler)
+    signal.alarm(opts.timeout)
+    content=retrieve_content(opts.host,443,login,password)
+    signal.alarm(0)
+
+    hostid=content.rootFolder.childEntity[0].hostFolder.childEntity[0].host[0]
     if (opts.cmd == 'cpu') or (opts.cmd == 'mem'):
         stats=hostid.summary.quickStats
         hardware=hostid.summary.hardware
